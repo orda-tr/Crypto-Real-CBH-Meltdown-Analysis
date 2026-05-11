@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>eToro TRC — Crypto Real CBH Meltdown Analysis</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f9fa;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+.header{background:#fff;border-bottom:2px solid #d5dde5;padding:6px 32px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.title-bar{background:#fff;padding:8px 32px 6px;border-bottom:1px solid #eef2f7;flex-shrink:0}
+.content{flex:1;overflow:hidden;padding:10px 0 4px;display:flex;flex-direction:column}
+.slide{display:none;padding:0 32px;flex-direction:column;gap:12px;height:100%;justify-content:space-between}
+.slide.active{display:flex}
+.nav{background:#fff;border-top:2px solid #d5dde5;padding:6px 32px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.nav button{border:none;border-radius:6px;padding:7px 18px;font-weight:700;font-size:14px;cursor:pointer}
+.nav button.on{background:#1a5276;color:#fff}
+.nav button.off{background:#eef2f7;color:#85929e;cursor:default}
+.dots{display:flex;gap:6px}
+.dot{width:9px;height:9px;border-radius:5px;cursor:pointer;background:#d5dde5}
+.dot.active{background:#1a5276}
+.row{display:flex;gap:14px}
+table{width:100%;border-collapse:collapse}
+th{padding:5px 6px;color:#5d6d7e;font-weight:700;font-size:13px;border:1px solid #d5dde5;background:#eef2f7}
+td{padding:5px 6px;border:1px solid #d5dde5;text-align:center}
+.pos-bg{background:#e8f0fe}
+.neg-bg{background:#f5f0eb}
+.pos-txt{font-weight:800;font-size:17px;color:#1a5276}
+.neg-txt{font-weight:800;font-size:17px;color:#8b6914}
+.sub{font-size:11px;color:#5d6d7e;margin-top:2px}
+.insight{background:#fef9e7;border-radius:8px;padding:12px 20px;border:1px solid #f0d27a}
+.param{background:#eef2f7;border-radius:7px;padding:10px 14px;flex:1}
+code{background:#eef2f7;padding:2px 7px;border-radius:4px;font-size:14px;color:#1a5276;display:inline-block;margin-top:3px}
+.bar-row{display:flex;align-items:center;margin-bottom:7px}
+.bar-label{width:115px;font-size:14px;color:#2c3e50;font-weight:600}
+.bar-bg{flex:1;background:#eef2f7;border-radius:5px;height:28px;position:relative}
+.bar-fill{position:absolute;left:0;top:0;height:100%;border-radius:5px}
+.bar-val{position:absolute;right:10px;top:4px;font-size:14px;color:#2c3e50;font-weight:700}
+.rec-box{flex:1;background:#eef2f7;border-radius:8px;padding:12px 16px}
+.rec-header{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.rec-num{width:24px;height:24px;border-radius:12px;background:#1a5276;color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
+.thr-nop{padding:8px 12px;color:#e67e22;font-weight:700;border:1px solid #d5dde5;background:#fef9e7;font-size:15px;text-align:left}
+.thr-stay{padding:8px 12px;text-align:center;border:1px solid #d5dde5;font-weight:700;font-size:14px;color:#1a5276;background:#e8f0fe}
+.thr-release{padding:8px 12px;text-align:center;border:1px solid #d5dde5;font-weight:700;font-size:14px;color:#8b6914;background:#f5f0eb}
+.event-row td{padding:8px 10px;font-size:14px;border-bottom:1px solid #eef2f7}
+</style></head><body>
+
+<div class="header">
+  <div><span style="color:#27ae60;font-weight:800;font-size:20px">eToro</span><span style="color:#5d6d7e;font-size:16px;margin-left:14px">Trading Risk Committee</span></div>
+  <div style="color:#1a5276;font-size:17px;font-weight:700">Crypto Real CBH Meltdown Analysis</div>
+</div>
+<div class="title-bar">
+  <div style="color:#85929e;font-size:12px" id="slideNum">Slide 1/4</div>
+  <div style="color:#2c3e50;font-size:24px;font-weight:700;margin:2px 0 0" id="slideTitle"></div>
+</div>
+
+<div class="content">
+
+<!-- SLIDE 1 -->
+<div class="slide active" id="s1">
+  <div class="row">
+    <div style="flex:1;background:#fdf2f2;border-radius:10px;padding:14px 18px;border-left:4px solid #c0392b">
+      <div style="color:#c0392b;font-weight:700;font-size:18px;margin-bottom:5px">Loss Without CB</div>
+      <div style="color:#2c3e50;font-size:15px;line-height:1.6">
+        Clients panic-sell during crash. eToro cannot close hedge positions at LPs fast enough → stuck with excess inventory that loses value.<br/>
+        <code>NOP × panic_sell_rate × effective_drop</code>
+      </div>
+    </div>
+    <div style="flex:1;background:#f0f4f8;border-radius:10px;padding:14px 18px;border-left:4px solid #1a5276">
+      <div style="color:#1a5276;font-weight:700;font-size:18px;margin-bottom:5px">Cost With CB</div>
+      <div style="color:#2c3e50;font-size:15px;line-height:1.6">
+        <b>Market loss:</b> CB_Limit × effective_drop<br/>
+        <b>+ Lifetime Value loss (LTV):</b> future commissions lost from clients who leave eToro for another broker due to being blocked<br/>
+        <span style="color:#e67e22;font-weight:700;font-size:14px">⚠ LTV is ~75% of total CB cost</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:10px;padding:12px 20px;border:1px solid #d5dde5;text-align:center">
+    <span style="font-size:20px;font-weight:700;color:#1a5276">Financial Advantage = </span>
+    <span style="font-size:20px;font-weight:700;color:#c0392b">Without CB</span>
+    <span style="font-size:20px;font-weight:700;color:#1a5276"> − </span>
+    <span style="font-size:20px;font-weight:700;color:#2980b9">With CB</span>
+    <span style="font-size:16px;color:#5d6d7e;margin-left:16px">
+      FA&gt;0 → <b style="color:#1a5276">STAY CB</b> &nbsp; FA&lt;0 → <b style="color:#8b6914">RELEASE CB</b>
+    </span>
+  </div>
+
+  <div class="insight">
+    <span style="color:#b7950b;font-weight:700;font-size:17px">⚡ Critical Insight: </span>
+    <span style="color:#6e5b00;font-size:15px;line-height:1.6">
+      CB limits = only <b>5–10%</b> of NOP. Market cost of CB is small. <b>The real cost is Lifetime Value</b> — clients blocked from selling lose trust and leave eToro for another broker, taking all their future trading commissions with them (~$125M over 2 years at 30% churn).
+    </span>
+  </div>
+
+  <div style="display:flex;gap:10px">
+    <div class="param">
+      <div style="color:#5d6d7e;font-size:12px;font-weight:700">PANIC SELL RATES</div>
+      <div style="color:#2c3e50;font-size:14px;margin-top:3px;font-weight:600">Price drop → Panic sell rate:<br/>20%→15% &nbsp; 50%→35% &nbsp; 80%→65%</div>
+      <div style="color:#85929e;font-size:11px;margin-top:2px">Research-based (see Slide 2)</div>
+    </div>
+    <div class="param">
+      <div style="color:#5d6d7e;font-size:12px;font-weight:700">ALTCOIN BETA</div>
+      <div style="color:#2c3e50;font-size:14px;margin-top:3px;font-weight:600">Tier-2 coins drop 1.3× harder than BTC/ETH</div>
+      <div style="color:#85929e;font-size:11px;margin-top:2px">146 of 149 instruments</div>
+    </div>
+    <div class="param">
+      <div style="color:#5d6d7e;font-size:12px;font-weight:700">CLIENT SEGMENTATION</div>
+      <div style="color:#2c3e50;font-size:14px;margin-top:3px;font-weight:600">Small 1.5× | Med 1.0× | Large 0.6×</div>
+      <div style="color:#85929e;font-size:11px;margin-top:2px">Churn sensitivity multipliers</div>
+    </div>
+    <div class="param">
+      <div style="color:#5d6d7e;font-size:12px;font-weight:700">REVENUE LOSS HORIZON</div>
+      <div style="color:#2c3e50;font-size:14px;margin-top:3px;font-weight:600">2-year lost commissions assumed</div>
+      <div style="color:#85929e;font-size:11px;margin-top:2px">All client trades (not just crypto)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2: Research -->
+<div class="slide" id="s2">
+  <div style="color:#2c3e50;font-size:15px;line-height:1.5">
+    The panic sell rates used in this analysis are derived from on-chain data observed during real historical crypto crashes. Sources: Glassnode Week On-Chain reports, BIS Bulletin No. 69, Chainalysis realized-loss data, CoinShares COVID analysis.
+  </div>
+
+  <div style="background:#fff;border-radius:10px;padding:14px 20px;border:1px solid #d5dde5;flex:1">
+    <table>
+      <thead><tr>
+        <th style="text-align:left;padding:8px 10px;font-size:14px">Event</th>
+        <th style="text-align:center;padding:8px 10px;font-size:14px">Date</th>
+        <th style="text-align:center;padding:8px 10px;font-size:14px">BTC Price Drop</th>
+        <th style="text-align:center;padding:8px 10px;font-size:14px">Observed Panic Sell %</th>
+        <th style="text-align:center;padding:8px 10px;font-size:14px">Model Lookup</th>
+        <th style="text-align:left;padding:8px 10px;font-size:14px">Key Evidence</th>
+      </tr></thead>
+      <tbody>
+        <tr class="event-row"><td style="text-align:left;font-weight:600">BTC ETF Correction</td><td>Jan 2024</td><td>−20% (2 wks)</td><td style="font-weight:700">~15%</td><td style="font-weight:700;color:#1a5276">15%</td><td style="text-align:left;font-size:13px">CoinMetrics exchange inflow data; Fear & Greed index ~25</td></tr>
+        <tr class="event-row"><td style="text-align:left;font-weight:600">FTX Collapse</td><td>Nov 2022</td><td>−25% (1 wk)</td><td style="font-weight:700">~22%</td><td style="font-weight:700;color:#1a5276">18%*</td><td style="text-align:left;font-size:13px">$10.16B 7-day realized losses; 97,450 BTC &gt;1yr spent; Glassnode</td></tr>
+        <tr class="event-row"><td style="text-align:left;font-weight:600">COVID "Black Thursday"</td><td>Mar 2020</td><td>−50% (48 hrs)</td><td style="font-weight:700">~38%</td><td style="font-weight:700;color:#1a5276">35%</td><td style="text-align:left;font-size:13px">&gt;40,000 BTC/day exchange inflows; $1.8B derivatives liquidated</td></tr>
+        <tr class="event-row"><td style="text-align:left;font-weight:600">China Ban</td><td>May 2021</td><td>−53% (3 wks)</td><td style="font-weight:700">~35%</td><td style="font-weight:700;color:#85929e">N/A†</td><td style="text-align:left;font-size:13px">30,749 BTC/day peak inflows; 1.1M addresses exited</td></tr>
+        <tr class="event-row"><td style="text-align:left;font-weight:600">LUNA Collapse</td><td>May 2022</td><td>−80%+</td><td style="font-weight:700">~65%</td><td style="font-weight:700;color:#1a5276">65%</td><td style="text-align:left;font-size:13px">$20.5B weekly realized losses; near-total STH exit; BIS Bulletin 69</td></tr>
+      </tbody>
+    </table>
+    <div style="color:#85929e;font-size:12px;margin-top:8px">* Interpolated (between 15% and 35% anchors) &nbsp;&nbsp; † Gradual decline — excluded from sudden-crash model</div>
+  </div>
+
+  <div style="display:flex;gap:14px">
+    <div style="flex:1;background:#e8f0fe;border-radius:8px;padding:12px 16px;border:1px solid #b8d4f0">
+      <div style="color:#1a5276;font-weight:700;font-size:15px;margin-bottom:4px">Model Lookup Table</div>
+      <div style="color:#2c3e50;font-size:15px;line-height:1.6">
+        <b>20% price drop → 15% panic sell</b> (Jan 2024 anchor)<br/>
+        <b>50% price drop → 35% panic sell</b> (COVID / China ban midpoint)<br/>
+        <b>80% price drop → 65% panic sell</b> (LUNA anchor)
+      </div>
+    </div>
+    <div style="flex:1;background:#fff4e6;border-radius:8px;padding:12px 16px;border:1px solid #f0d27a">
+      <div style="color:#b7950b;font-weight:700;font-size:15px;margin-bottom:4px">⚠ Note on Churn Rates</div>
+      <div style="color:#6e5b00;font-size:14px;line-height:1.6">
+        Churn rates (10%, 30%, 70%) are <b>scenario assumptions, not research-based</b>. They represent a sensitivity range from optimistic to pessimistic. Calibrating churn against actual eToro client retention data is a gap in this analysis and a recommended next step.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: Results -->
+<div class="slide" id="s3">
+  <div class="row">
+    <div style="flex:1;background:#fff;border-radius:8px;padding:8px 14px;border-top:4px solid #1a5276;border:1px solid #d5dde5;display:flex;justify-content:space-between;align-items:center">
+      <div><span style="color:#1a5276;font-weight:700;font-size:16px">Current NOP: </span><span style="font-weight:800;font-size:20px;color:#2c3e50">$665M</span></div>
+      <div style="font-size:13px;color:#5d6d7e">CB: $66M &nbsp;|&nbsp; Comm: $151M &nbsp;|&nbsp; CB/NOP: 10%</div>
+    </div>
+    <div style="flex:1;background:#fff;border-radius:8px;padding:8px 14px;border-top:4px solid #e67e22;border:1px solid #d5dde5;display:flex;justify-content:space-between;align-items:center">
+      <div><span style="color:#e67e22;font-weight:700;font-size:16px">Peak NOP (Oct '25): </span><span style="font-weight:800;font-size:20px;color:#2c3e50">$1,301M</span></div>
+      <div style="font-size:13px;color:#5d6d7e">CB: $71M &nbsp;|&nbsp; Comm: $161M &nbsp;|&nbsp; CB/NOP: 5.4%</div>
+    </div>
+  </div>
+
+  <div class="row" style="flex:1">
+    <div style="flex:1">
+      <div style="text-align:center;color:#1a5276;font-weight:700;font-size:15px;margin-bottom:4px">Current ($665M) — 4 STAY / 5 RELEASE</div>
+      <table><thead><tr><th style="font-size:13px">Price Drop<br/>(panic sell)</th><th style="font-size:13px">Churn 10%</th><th style="font-size:13px">Churn 30%</th><th style="font-size:13px">Churn 70%</th></tr></thead><tbody>
+        <tr><td style="background:#eef2f7;font-weight:700;font-size:15px;padding:8px">20% drop<br/><span style="color:#85929e;font-size:12px;font-weight:400">panic sell 15%</span></td><td class="neg-bg" style="padding:6px"><div class="neg-txt" style="font-size:22px">-$35M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $24M<br/>Stay: $59M</div></td><td class="neg-bg" style="padding:6px"><div class="neg-txt" style="font-size:22px">-$118M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $24M<br/>Stay: $142M</div></td><td class="neg-bg" style="padding:6px"><div class="neg-txt" style="font-size:22px">-$273M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $24M<br/>Stay: $297M</div></td></tr>
+        <tr><td style="background:#eef2f7;font-weight:700;font-size:15px;padding:8px">50% drop<br/><span style="color:#85929e;font-size:12px;font-weight:400">panic sell 35%</span></td><td class="pos-bg" style="padding:6px"><div class="pos-txt" style="font-size:22px">+$53M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $137M<br/>Stay: $84M</div></td><td class="neg-bg" style="padding:6px"><div class="neg-txt" style="font-size:22px">-$30M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $137M<br/>Stay: $167M</div></td><td class="neg-bg" style="padding:6px"><div class="neg-txt" style="font-size:22px">-$185M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $137M<br/>Stay: $322M</div></td></tr>
+        <tr><td style="background:#eef2f7;font-weight:700;font-size:15px;padding:8px">80% drop<br/><span style="color:#85929e;font-size:12px;font-weight:400">panic sell 65%</span></td><td class="pos-bg" style="padding:6px"><div class="pos-txt" style="font-size:22px">+$290M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $397M<br/>Stay: $107M</div></td><td class="pos-bg" style="padding:6px"><div class="pos-txt" style="font-size:22px">+$207M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $397M<br/>Stay: $190M</div></td><td class="pos-bg" style="padding:6px"><div class="pos-txt" style="font-size:22px">+$52M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $397M<br/>Stay: $345M</div></td></tr>
+      </tbody></table>
+      <div style="margin-top:4px;font-size:13px;color:#5d6d7e"><span style="display:inline-block;width:12px;height:12px;background:#e8f0fe;border:1px solid #b8d4f0;border-radius:2px;vertical-align:middle;margin-right:4px"></span><b style="color:#1a5276">STAY CB</b> (FA &gt; 0) &nbsp;&nbsp; <span style="display:inline-block;width:12px;height:12px;background:#f5f0eb;border:1px solid #d5cfc5;border-radius:2px;vertical-align:middle;margin-right:4px"></span><b style="color:#8b6914">RELEASE CB</b> (FA &lt; 0)</div>
+    </div>
+    <div style="flex:1">
+      <div style="text-align:center;color:#e67e22;font-weight:700;font-size:15px;margin-bottom:4px">Peak ($1,301M) — 5 STAY / 4 RELEASE</div>
+      <table><thead><tr><th style="font-size:14px">Price Drop<br/>(panic sell)</th><th style="font-size:14px">Churn 10%</th><th style="font-size:14px">Churn 30%</th><th style="font-size:14px">Churn 70%</th></tr></thead><tbody>
+        <tr><td style="background:#eef2f7;font-weight:700;font-size:15px;padding:8px">20% drop<br/><span style="color:#85929e;font-size:12px;font-weight:400">panic sell 15%</span></td><td class="neg-bg" style="padding:6px"><div class="neg-txt" style="font-size:22px">-$13M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $47M<br/>Stay: $60M</div></td><td class="neg-bg" style="padding:6px"><div class="neg-txt" style="font-size:22px">-$97M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $47M<br/>Stay: $144M</div></td><td class="neg-bg" style="padding:6px"><div class="neg-txt" style="font-size:22px">-$254M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $47M<br/>Stay: $301M</div></td></tr>
+        <tr><td style="background:#eef2f7;font-weight:700;font-size:15px;padding:8px">50% drop<br/><span style="color:#85929e;font-size:12px;font-weight:400">panic sell 35%</span></td><td class="pos-bg" style="padding:6px"><div class="pos-txt" style="font-size:22px">+$188M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $275M<br/>Stay: $87M</div></td><td class="pos-bg" style="padding:6px"><div class="pos-txt" style="font-size:22px">+$104M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $275M<br/>Stay: $171M</div></td><td class="neg-bg" style="padding:6px"><div class="neg-txt" style="font-size:22px">-$54M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $275M<br/>Stay: $328M</div></td></tr>
+        <tr><td style="background:#eef2f7;font-weight:700;font-size:15px;padding:8px">80% drop<br/><span style="color:#85929e;font-size:12px;font-weight:400">panic sell 65%</span></td><td class="pos-bg" style="padding:6px"><div class="pos-txt" style="font-size:22px">+$682M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $794M<br/>Stay: $112M</div></td><td class="pos-bg" style="padding:6px"><div class="pos-txt" style="font-size:22px">+$598M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $794M<br/>Stay: $196M</div></td><td class="pos-bg" style="padding:6px"><div class="pos-txt" style="font-size:22px">+$441M</div><div style="font-size:14px;color:#5d6d7e;margin-top:3px">Release: $794M<br/>Stay: $353M</div></td></tr>
+      </tbody></table>
+      <div style="margin-top:4px;font-size:13px;color:#5d6d7e"><span style="display:inline-block;width:12px;height:12px;background:#e8f0fe;border:1px solid #b8d4f0;border-radius:2px;vertical-align:middle;margin-right:4px"></span><b style="color:#1a5276">STAY CB</b> (FA &gt; 0) &nbsp;&nbsp; <span style="display:inline-block;width:12px;height:12px;background:#f5f0eb;border:1px solid #d5cfc5;border-radius:2px;vertical-align:middle;margin-right:4px"></span><b style="color:#8b6914">RELEASE CB</b> (FA &lt; 0)</div>
+    </div>
+  </div>
+
+  <div class="insight" style="padding:10px 18px">
+    <span style="color:#b7950b;font-weight:700;font-size:15px">Key: </span>
+    <span style="color:#6e5b00;font-size:14px">Same scenario (50% drop, 30% churn) flips from <b style="color:#8b6914">RELEASE (−$30M)</b> to <b style="color:#1a5276">STAY (+$104M)</b> when NOP doubles. Loss if CB released jumps $137M→$275M while cost of keeping CB barely moves. Break-even NOP: <b>~$809M</b>.</span>
+  </div>
+</div>
+
+<!-- SLIDE 4: Sensitivity + Thresholds -->
+<div class="slide" id="s4">
+  <div style="display:flex;gap:16px">
+    <div style="flex:1">
+      <div style="color:#5d6d7e;font-size:14px;font-weight:700;margin-bottom:4px">Current ($665M)</div>
+      <div style="font-size:13px;color:#2c3e50;margin-bottom:8px">Base: 50% drop, 35% panic sell, 30% churn → Release CB: $137M | Stay CB: $167M | <b>FA: −$30M</b></div>
+      <div class="bar-row"><div class="bar-label">Price Drop</div><div class="bar-bg"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#bdd7ee,#5b9bd5)"></div><div class="bar-val">$325M</div></div></div>
+      <div class="bar-row"><div class="bar-label">Client Churn</div><div class="bar-bg"><div class="bar-fill" style="width:73%;background:linear-gradient(90deg,#f5deb3,#daa520)"></div><div class="bar-val">$238M</div></div></div>
+      <div class="bar-row"><div class="bar-label">Panic Scale</div><div class="bar-bg"><div class="bar-fill" style="width:25%;background:linear-gradient(90deg,#bdd7ee,#5b9bd5)"></div><div class="bar-val">~$82M</div></div></div>
+      <div class="bar-row"><div class="bar-label">Altcoin Beta</div><div class="bar-bg"><div class="bar-fill" style="width:15%;background:linear-gradient(90deg,#bdd7ee,#5b9bd5)"></div><div class="bar-val">&lt;$50M</div></div></div>
+    </div>
+    <div style="flex:1">
+      <div style="color:#5d6d7e;font-size:14px;font-weight:700;margin-bottom:4px">Peak ($1,301M)</div>
+      <div style="font-size:13px;color:#2c3e50;margin-bottom:8px">Base: 50% drop, 35% panic sell, 30% churn → Release CB: $275M | Stay CB: $171M | <b>FA: +$104M</b></div>
+      <div class="bar-row"><div class="bar-label">Price Drop</div><div class="bar-bg"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#bdd7ee,#5b9bd5)"></div><div class="bar-val">$695M</div></div></div>
+      <div class="bar-row"><div class="bar-label">Client Churn</div><div class="bar-bg"><div class="bar-fill" style="width:35%;background:linear-gradient(90deg,#f5deb3,#daa520)"></div><div class="bar-val">$241M</div></div></div>
+      <div class="bar-row"><div class="bar-label">Panic Scale</div><div class="bar-bg"><div class="bar-fill" style="width:24%;background:linear-gradient(90deg,#bdd7ee,#5b9bd5)"></div><div class="bar-val">~$165M</div></div></div>
+      <div class="bar-row"><div class="bar-label">Altcoin Beta</div><div class="bar-bg"><div class="bar-fill" style="width:12%;background:linear-gradient(90deg,#bdd7ee,#5b9bd5)"></div><div class="bar-val">&lt;$80M</div></div></div>
+    </div>
+  </div>
+
+  <div style="background:#f0f4f8;border-radius:8px;padding:12px 18px;border:1px solid #d5dde5">
+    <div style="color:#2c3e50;font-size:15px;line-height:1.6"><b>How to read the Tornado Chart:</b> All parameters are held at the base case (50% drop, 35% panic sell, 30% churn). Then <b>one parameter at a time</b> is swept from its lowest to highest possible value. The bar length shows how much the Financial Advantage changes — longer bar means the result is more sensitive to that parameter. <span style="color:#5b9bd5;font-weight:600">Blue bars</span> = higher value strengthens the case for keeping CB. <span style="color:#daa520;font-weight:600">Gold bars</span> = higher value weakens the case for CB.</div>
+  </div>
+
+  <div style="background:#fff;border-radius:8px;padding:12px 18px;border:1px solid #d5dde5">
+    <div style="color:#2c3e50;font-weight:700;font-size:16px;margin-bottom:4px">NOP-Dependent CB Thresholds</div>
+    <div style="color:#85929e;font-size:12px;margin-bottom:6px">Panic sell rates per research lookup (slide 2). Each cell shows the CB decision at <b>30% churn rate</b>. Cells with churn conditions indicate the decision changes at higher churn levels.</div>
+    <table style="font-size:15px"><thead><tr style="background:#eef2f7"><th style="padding:7px 10px;text-align:left;font-size:14px">NOP Range</th><th style="padding:7px 10px;text-align:center;font-size:14px">20% Price Drop<br/><span style="font-weight:400;font-size:11px">15% panic sell</span></th><th style="padding:7px 10px;text-align:center;font-size:14px">50% Price Drop<br/><span style="font-weight:400;font-size:11px">35% panic sell</span></th><th style="padding:7px 10px;text-align:center;font-size:14px">80% Price Drop<br/><span style="font-weight:400;font-size:11px">65% panic sell</span></th></tr></thead><tbody>
+      <tr><td class="thr-nop">&lt; $500M</td><td class="thr-release">RELEASE</td><td class="thr-release">RELEASE</td><td class="thr-release">RELEASE<br/><span style="font-size:11px;font-weight:400">(STAY if churn &lt;10%)</span></td></tr>
+      <tr><td class="thr-nop">$500M – $809M</td><td class="thr-release">RELEASE</td><td class="thr-release">RELEASE</td><td class="thr-stay">STAY (churn &lt;30%)</td></tr>
+      <tr><td class="thr-nop">$809M – $1.3B</td><td class="thr-release">RELEASE</td><td class="thr-stay">STAY (churn &lt;30%)</td><td class="thr-stay">STAY</td></tr>
+      <tr><td class="thr-nop">&gt; $1.3B</td><td class="thr-release">RELEASE</td><td class="thr-stay">STAY</td><td class="thr-stay">STAY</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button id="prevBtn" class="off" onclick="go(-1)">← Prev</button>
+  <div class="dots" id="dots"></div>
+  <button id="nextBtn" class="on" onclick="go(1)">Next →</button>
+</div>
+
+<script>
+const titles=[
+  "CB Framework: Market Exposure vs. Client Revenue at Risk",
+  "Panic Sell Assumptions — Research Basis",
+  "Results — Current NOP vs Peak NOP",
+  "Sensitivity Analysis & CB Thresholds"
+];
+let cur=0,total=4;
+function render(){
+  for(let i=0;i<total;i++)document.getElementById('s'+(i+1)).classList.toggle('active',i===cur);
+  document.getElementById('slideNum').textContent='Slide '+(cur+1)+'/'+total;
+  document.getElementById('slideTitle').textContent=titles[cur];
+  document.getElementById('prevBtn').className=cur===0?'off':'on';
+  document.getElementById('nextBtn').className=cur===total-1?'off':'on';
+  let d='';for(let i=0;i<total;i++)d+='<div class="dot'+(i===cur?' active':'')+'" onclick="goTo('+i+')"></div>';
+  document.getElementById('dots').innerHTML=d;
+}
+function go(d){cur=Math.max(0,Math.min(total-1,cur+d));render()}
+function goTo(i){cur=i;render()}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')go(1);if(e.key==='ArrowLeft')go(-1)});
+render();
+</script>
+</body></html>
